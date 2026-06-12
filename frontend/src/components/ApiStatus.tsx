@@ -6,8 +6,15 @@ type HealthResponse = {
   status: string;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const DEFAULT_API_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://ml-chess-engine.onrender.com"
+    : "http://127.0.0.1:8000";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL).replace(
+  /\/$/,
+  "",
+);
 
 export default function ApiStatus() {
   const [status, setStatus] = useState("Checking API...");
@@ -22,7 +29,9 @@ export default function ApiStatus() {
         }
 
         const data = (await response.json()) as HealthResponse;
-        setStatus(data.status === "ok" ? "Engine API online" : "Unexpected API response");
+        setStatus(
+          data.status === "ok" ? "Engine API online" : "Unexpected API response",
+        );
       } catch (error) {
         console.error(error);
         setStatus("Engine API offline");
@@ -32,9 +41,5 @@ export default function ApiStatus() {
     void checkApi();
   }, []);
 
-  return (
-    <p className="text-sm text-zinc-600">
-      {status}
-    </p>
-  );
+  return <p className="text-sm text-zinc-600">{status}</p>;
 }
