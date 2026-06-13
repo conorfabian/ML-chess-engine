@@ -1,9 +1,10 @@
 import ApiStatus from "@/components/ApiStatus";
+import ChessGame from "@/components/ChessGame";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-zinc-100 p-8">
-      <div className="mx-auto max-w-4xl">
+    <main className="min-h-screen bg-zinc-100 p-6 md:p-10">
+      <div className="mx-auto max-w-5xl">
         <h1 className="text-3xl font-bold text-zinc-900">
           Conor Chess Engine
         </h1>
@@ -11,6 +12,8 @@ export default function Home() {
         <div className="mt-2">
           <ApiStatus />
         </div>
+
+        <ChessGame />
       </div>
     </main>
   );
