@@ -5,6 +5,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from engine.search import search
+
 app = FastAPI(
     title="Conor Chess Engine API",
     version="0.1.0",
@@ -42,20 +44,6 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-def select_move(board: chess.Board) -> chess.Move:
-    """
-    Temporary placeholder.
-
-    This function is the seam where the custom engine will later be inserted.
-    """
-    move = next(iter(board.legal_moves), None)
-
-    if move is None:
-        raise ValueError("The position contains no legal moves")
-
-    return move
-
-
 @app.post("/engine-move", response_model=EngineMoveResponse)
 def engine_move(payload: EngineMoveRequest) -> EngineMoveResponse:
     try:
@@ -67,7 +55,7 @@ def engine_move(payload: EngineMoveRequest) -> EngineMoveResponse:
         raise HTTPException(status_code=400, detail="The game is already over")
 
     try:
-        move = select_move(board)
+        move = search(board)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
