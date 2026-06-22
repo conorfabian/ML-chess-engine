@@ -216,7 +216,22 @@ export default function ChessGame() {
       : "Waking the free chess engine. This can take up to a minute.";
 
   return (
-    <section className="mt-8 grid gap-6 md:grid-cols-[minmax(0,560px)_1fr]">
+    <>
+      <p
+        role="status"
+        aria-live="polite"
+        className="mt-2 flex items-center gap-2 text-sm text-zinc-600"
+      >
+        <span
+          className={`h-2 w-2 rounded-full ${
+            readiness === "ready" ? "bg-emerald-500" : "bg-amber-500"
+          }`}
+          aria-hidden="true"
+        />
+        {readiness === "ready" ? "Engine API online" : "Waking engine..."}
+      </p>
+
+      <section className="mt-8 grid gap-6 md:grid-cols-[minmax(0,560px)_1fr]">
       <div className="relative w-full max-w-[560px]">
         <Chessboard options={chessboardOptions} />
 
@@ -266,6 +281,7 @@ export default function ChessGame() {
           Reset game
         </button>
       </aside>
-    </section>
+      </section>
+    </>
   );
 }
