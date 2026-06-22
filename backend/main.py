@@ -55,7 +55,7 @@ def engine_move(payload: EngineMoveRequest) -> EngineMoveResponse:
         raise HTTPException(status_code=400, detail="The game is already over")
 
     try:
-        move = search(board, 2)
+        move = search(board, 1)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 

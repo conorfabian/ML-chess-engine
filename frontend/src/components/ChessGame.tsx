@@ -289,6 +289,12 @@ export default function ChessGame() {
             <span role="status" aria-live="polite">
               {readiness === "ready" ? "Engine online" : "Waking engine..."}
             </span>
+            <span
+              className="border-l border-white/15 pl-2 text-[#ababaa]"
+              title="Engine search depth"
+            >
+              Depth 1
+            </span>
           </div>
         </div>
       </header>
