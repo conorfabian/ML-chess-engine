@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import {
   Chessboard,
@@ -11,6 +11,12 @@ type EngineMoveResponse = {
   move: string;
   resulting_fen: string;
 };
+
+type HealthResponse = {
+  status: string;
+};
+
+type EngineReadiness = "waking" | "slow" | "ready";
 
 const DEFAULT_API_URL =
   process.env.NODE_ENV === "production"
@@ -23,13 +29,82 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL).replace(
 );
 
 const STARTING_FEN = new Chess().fen();
+const HEALTH_REQUEST_TIMEOUT_MS = 10_000;
+const HEALTH_RETRY_DELAY_MS = 3_000;
+const SLOW_WAKE_THRESHOLD_MS = 60_000;
 
 export default function ChessGame() {
   const gameRef = useRef(new Chess());
+  const wakeStartedAtRef = useRef<number | null>(null);
 
   const [position, setPosition] = useState(STARTING_FEN);
   const [message, setMessage] = useState("Your turn");
   const [isThinking, setIsThinking] = useState(false);
+  const [readiness, setReadiness] = useState<EngineReadiness>("waking");
+  const [healthCheckVersion, setHealthCheckVersion] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    let retryTimeout: ReturnType<typeof setTimeout> | undefined;
+    let requestController: AbortController | undefined;
+
+    wakeStartedAtRef.current ??= Date.now();
+
+    async function checkHealth(): Promise<void> {
+      requestController = new AbortController();
+      const requestTimeout = setTimeout(
+        () => requestController?.abort(),
+        HEALTH_REQUEST_TIMEOUT_MS,
+      );
+
+      try {
+        const response = await fetch(`${API_URL}/health`, {
+          signal: requestController.signal,
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Health request failed: ${response.status}`);
+        }
+
+        const data = (await response.json()) as HealthResponse;
+        if (data.status !== "ok") {
+          throw new Error("Unexpected health response");
+        }
+
+        if (!cancelled) {
+          setReadiness("ready");
+        }
+        return;
+      } catch {
+        // The visible warm-up state communicates expected cold-start failures.
+      } finally {
+        clearTimeout(requestTimeout);
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      const wakeStartedAt = wakeStartedAtRef.current ?? Date.now();
+      setReadiness(
+        Date.now() - wakeStartedAt >= SLOW_WAKE_THRESHOLD_MS
+          ? "slow"
+          : "waking",
+      );
+      retryTimeout = setTimeout(checkHealth, HEALTH_RETRY_DELAY_MS);
+    }
+
+    void checkHealth();
+
+    return () => {
+      cancelled = true;
+      requestController?.abort();
+      if (retryTimeout !== undefined) {
+        clearTimeout(retryTimeout);
+      }
+    };
+  }, [healthCheckVersion]);
 
   async function requestEngineMove(fen: string): Promise<void> {
     setIsThinking(true);
@@ -91,6 +166,7 @@ export default function ChessGame() {
     if (
       targetSquare === null ||
       isThinking ||
+      readiness !== "ready" ||
       gameRef.current.turn() !== "w"
     ) {
       return false;
@@ -131,13 +207,42 @@ export default function ChessGame() {
     position,
     boardOrientation: "white" as const,
     onPieceDrop: handlePieceDrop,
-    allowDragging: !isThinking,
+    allowDragging: readiness === "ready" && !isThinking,
   };
+
+  const readinessMessage =
+    readiness === "slow"
+      ? "The free engine is taking longer than expected to wake up. We will keep trying."
+      : "Waking the free chess engine. This can take up to a minute.";
 
   return (
     <section className="mt-8 grid gap-6 md:grid-cols-[minmax(0,560px)_1fr]">
-      <div className="w-full max-w-[560px]">
+      <div className="relative w-full max-w-[560px]">
         <Chessboard options={chessboardOptions} />
+
+        {readiness !== "ready" && (
+          <div className="absolute inset-0 flex items-center justify-center rounded bg-zinc-950/70 p-6 text-center text-white">
+            <div role="status" aria-live="polite" className="max-w-sm">
+              <div
+                className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                aria-hidden="true"
+              />
+              <p className="mt-4 font-medium">Preparing the engine</p>
+              <p className="mt-2 text-sm text-zinc-200">
+                {readinessMessage}
+              </p>
+              {readiness === "slow" && (
+                <button
+                  type="button"
+                  onClick={() => setHealthCheckVersion((version) => version + 1)}
+                  className="mt-4 rounded bg-white px-4 py-2 text-sm font-medium text-zinc-900"
+                >
+                  Check again
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <aside className="rounded-lg bg-white p-5 shadow-sm">
@@ -149,13 +254,13 @@ export default function ChessGame() {
           className="mt-2 text-sm text-zinc-600"
           aria-live="polite"
         >
-          {message}
+          {readiness === "ready" ? message : readinessMessage}
         </p>
 
         <button
           type="button"
           onClick={resetGame}
-          disabled={isThinking}
+          disabled={isThinking || readiness !== "ready"}
           className="mt-4 rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           Reset game

@@ -1,4 +1,3 @@
-import ApiStatus from "@/components/ApiStatus";
 import ChessGame from "@/components/ChessGame";
 
 export default function Home() {
@@ -8,10 +7,6 @@ export default function Home() {
         <h1 className="text-3xl font-bold text-zinc-900">
           Conor Chess Engine
         </h1>
-
-        <div className="mt-2">
-          <ApiStatus />
-        </div>
 
         <ChessGame />
       </div>
