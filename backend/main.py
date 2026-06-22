@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from engine.search import search
 
 app = FastAPI(
-    title="Conor Chess Engine API",
+    title="ML Chess Engine API",
     version="0.1.0",
 )
 
@@ -55,7 +55,7 @@ def engine_move(payload: EngineMoveRequest) -> EngineMoveResponse:
         raise HTTPException(status_code=400, detail="The game is already over")
 
     try:
-        move = search(board, 1)
+        move = search(board, 2)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 

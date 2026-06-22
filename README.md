@@ -1,4 +1,4 @@
-# Conor Chess Engine
+# ML Chess Engine
 
 A Next.js chess interface backed by a FastAPI chess engine. The frontend uses
 `chess.js` for legal moves and sends FEN positions to the deployed API, which
