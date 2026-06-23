@@ -70,7 +70,3 @@ There is also a GitHub Actions workflow that can call the backend health endpoin
 ```text
 BACKEND_URL=https://ml-chess-engine.onrender.com
 ```
-
-## Resume Summary
-
-ML Chess Engine is a deployed full-stack chess application built with Next.js, React, TypeScript, FastAPI, and Python. It demonstrates frontend state management, API integration, legal chess move validation, backend move generation, deployment, and basic production readiness.
