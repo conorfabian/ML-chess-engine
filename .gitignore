@@ -1,7 +1,10 @@
 backend/.venv/
+frontend/.next/
+frontend/node_modules/
 __pycache__/
 *.pyc
 .env
 .env.*
 .DS_Store
 AGENTS.md
+chess_evaluation_model.ipynb
