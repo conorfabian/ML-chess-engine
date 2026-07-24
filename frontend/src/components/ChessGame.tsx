@@ -303,7 +303,7 @@ export default function ChessGame() {
               className="border-l border-white/15 pl-2 text-[#ababaa]"
               title="Engine search depth"
             >
-              Depth 2
+              Depth 1
             </span>
           </div>
         </div>
